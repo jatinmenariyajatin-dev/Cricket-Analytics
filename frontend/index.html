@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>🏏 Cricket Analytics Pro</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <style>
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: #0b1120;
+      color: #e8edf5;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .container { max-width:1400px; margin:0 auto; }
+    header {
+      display: flex; justify-content: space-between; align-items: center;
+      padding:16px 24px; background:#141e2d; border-radius:18px;
+      margin-bottom:28px; box-shadow:0 8px 30px rgba(0,0,0,0.5);
+      border:1px solid #243447; flex-wrap:wrap; gap:12px;
+    }
+    .logo {
+      font-size:26px; font-weight:700;
+      background:linear-gradient(135deg,#facc15,#f59e0b);
+      -webkit-background-clip:text; -webkit-text-fill-color:transparent;
+      display:flex; align-items:center; gap:10px;
+    }
+    .logo i { -webkit-text-fill-color:#facc15; font-size:28px; }
+    .header-badge {
+      background:#1e2a3d; padding:8px 18px; border-radius:40px;
+      font-size:14px; color:#94a3b8; border:1px solid #2d405b;
+    }
+    .header-badge span { color:#facc15; font-weight:600; }
+    .stats-grid {
+      display:grid; grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+      gap:16px; margin-bottom:28px;
+    }
+    .stat-card {
+      background:#141e2d; padding:18px 22px; border-radius:16px;
+      border:1px solid #243447; box-shadow:0 4px 16px rgba(0,0,0,0.3);
+      transition:0.2s;
+    }
+    .stat-card:hover { border-color:#3b5a7a; transform:translateY(-2px); }
+    .stat-card .label { font-size:13px; color:#94a3b8; text-transform:uppercase; letter-spacing:1px; }
+    .stat-card .value { font-size:28px; font-weight:700; margin-top:4px; color:#f1f5f9; }
+    .stat-card .value.gold { color:#facc15; }
+    .stat-card .value.blue { color:#60a5fa; }
+    .stat-card .value.green { color:#4ade80; }
+    .stat-card .value.pink { color:#f472b6; }
+    .panel {
+      background:#141e2d; border-radius:18px; border:1px solid #243447;
+      padding:24px; margin-bottom:28px; box-shadow:0 8px 30px rgba(0,0,0,0.4);
+    }
+    .panel-title {
+      font-size:20px; font-weight:600; margin-bottom:18px;
+      display:flex; align-items:center; gap:12px;
+    }
+    .panel-title i { color:#facc15; }
+    .player-grid {
+      display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr));
+      gap:20px;
+    }
+    .player-card {
+      background:#1a2332; border-radius:16px; padding:20px;
+      border:1px solid #2a3a4f; transition:0.25s;
+      display:flex; flex-direction:column; align-items:center; text-align:center;
+      position:relative; overflow:hidden;
+    }
+    .player-card:hover {
+      border-color:#4a6a8a; transform:translateY(-6px);
+      box-shadow:0 12px 40px rgba(0,0,0,0.5);
+    }
+    .player-card .avatar {
+      width:80px; height:80px; border-radius:50%; background:#2a3a4f;
+      display:flex; align-items:center; justify-content:center;
+      font-size:36px; font-weight:700; color:#facc15; margin-bottom:12px;
+      border:3px solid #3b5a7a;
+      background-image:linear-gradient(135deg,#1e2a3d,#2a3a4f);
+      position: relative;
+      overflow: hidden;
+    }
+    .player-card .avatar img {
+      width:100%; height:100%; object-fit:cover;
+      border-radius:50%;
+    }
+    .player-card .avatar .fallback {
+      display: none;  /* hidden by default, shown when image fails */
+      width:100%; height:100%;
+      align-items:center; justify-content:center;
+      font-size:36px; font-weight:700; color:#facc15;
+    }
+    .player-card .avatar img:not([src]) + .fallback,
+    .player-card .avatar img[src=""] + .fallback,
+    .player-card .avatar img.error + .fallback {
+      display: flex;
+    }
+    .player-card .avatar img.error {
+      display: none;
+    }
+    .player-card .name { font-size:18px; font-weight:600; margin-top:4px; }
+    .player-card .role {
+      font-size:13px; color:#94a3b8; background:#243447;
+      padding:2px 14px; border-radius:40px; margin:4px 0 10px 0; display:inline-block;
+    }
+    .player-card .stats-row {
+      display:flex; justify-content:center; gap:24px; width:100%;
+      margin-top:8px; padding-top:12px; border-top:1px solid #243447;
+    }
+    .player-card .stats-row .num { font-size:20px; font-weight:700; color:#f1f5f9; }
+    .player-card .stats-row .lbl { font-size:11px; color:#94a3b8; text-transform:uppercase; }
+    .cluster-badge {
+      position:absolute; top:12px; right:12px; font-size:11px;
+      padding:2px 12px; border-radius:40px; font-weight:600;
+    }
+    .cluster-0 { background:#3b82f6; color:#fff; }
+    .cluster-1 { background:#8b5cf6; color:#fff; }
+    .cluster-2 { background:#ec4899; color:#fff; }
+    .chart-row { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+    .chart-box {
+      background:#1a2332; border-radius:14px; padding:16px;
+      border:1px solid #2a3a4f;
+    }
+    .chart-box canvas { width:100% !important; max-height:280px; }
+    .chart-box h4 { font-size:14px; font-weight:500; color:#94a3b8; margin-bottom:10px; text-align:center; }
+    .ml-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
+    .ml-card {
+      background:#1a2332; border-radius:14px; padding:20px;
+      border:1px solid #2a3a4f;
+    }
+    .ml-card h4 { font-size:16px; margin-bottom:12px; display:flex; align-items:center; gap:10px; }
+    .ml-card h4 i { color:#facc15; }
+    .ml-card label { font-size:13px; color:#94a3b8; display:block; margin-top:10px; margin-bottom:4px; }
+    .ml-card input, .ml-card select {
+      width:100%; padding:10px 14px; border-radius:10px;
+      border:1px solid #2a3a4f; background:#0f1724; color:#e8edf5;
+      font-size:14px; outline:none; transition:0.2s;
+    }
+    .ml-card input:focus, .ml-card select:focus {
+      border-color:#60a5fa; box-shadow:0 0 0 3px rgba(96,165,250,0.2);
+    }
+    .ml-card button {
+      margin-top:14px; background:linear-gradient(135deg,#facc15,#f59e0b);
+      border:none; padding:10px 20px; border-radius:10px; font-weight:600;
+      color:#0b1120; cursor:pointer; transition:0.2s; font-size:14px; width:100%;
+    }
+    .ml-card button:hover { transform:scale(1.02); box-shadow:0 4px 20px rgba(250,204,21,0.3); }
+    .ml-result {
+      margin-top:14px; padding:14px; background:#0f1724; border-radius:10px;
+      border:1px solid #2a3a4f; font-size:15px; min-height:50px;
+    }
+    .ml-result .highlight { color:#facc15; font-weight:700; }
+    .loader {
+      display:inline-block; width:20px; height:20px;
+      border:3px solid #2a3a4f; border-top:3px solid #facc15;
+      border-radius:50%; animation:spin 0.8s linear infinite;
+      margin-right:8px; vertical-align:middle;
+    }
+    @keyframes spin { to { transform:rotate(360deg); } }
+    .text-muted { color:#94a3b8; font-size:14px; }
+    .footer {
+      text-align:center; padding:20px 0 10px; color:#4a6a8a;
+      font-size:13px; border-top:1px solid #1a2332; margin-top:20px;
+    }
+    .footer i { color:#facc15; }
+    @media (max-width:900px) {
+      .chart-row { grid-template-columns:1fr; }
+      .ml-grid { grid-template-columns:1fr; }
+      header { flex-direction:column; align-items:flex-start; }
+      .stats-grid { grid-template-columns:repeat(2,1fr); }
+    }
+    @media (max-width:500px) {
+      .stats-grid { grid-template-columns:1fr; }
+      .player-grid { grid-template-columns:1fr; }
+      .panel { padding:16px; }
+    }
+  </style>
+</head>
+<body>
+<div class="container" id="app">
+
+  <header>
+    <div class="logo"><i class="fas fa-cricket"></i> Cricket Analytics Pro</div>
+    <div class="header-badge"><i class="fas fa-database"></i> <span id="playerCount">0</span> players &bull; <i class="fas fa-microchip"></i> ML enabled</div>
+  </header>
+
+  <div class="stats-grid" id="statsGrid">
+    <div class="stat-card"><div class="label">Total Players</div><div class="value gold" id="statPlayers">0</div></div>
+    <div class="stat-card"><div class="label">Total Runs</div><div class="value blue" id="statRuns">0</div></div>
+    <div class="stat-card"><div class="label">Total Wickets</div><div class="value green" id="statWickets">0</div></div>
+    <div class="stat-card"><div class="label">Avg Runs / Player</div><div class="value pink" id="statAvgRuns">0</div></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title"><i class="fas fa-users"></i> Players</div>
+    <div class="player-grid" id="playerGrid"></div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title"><i class="fas fa-chart-bar"></i> Performance Visuals</div>
+    <div class="chart-row">
+      <div class="chart-box"><h4>Runs vs Matches</h4><canvas id="chartRuns"></canvas></div>
+      <div class="chart-box"><h4>Wickets by Player</h4><canvas id="chartWickets"></canvas></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="panel-title"><i class="fas fa-brain"></i> Machine Learning Studio</div>
+    <div class="ml-grid">
+      <div class="ml-card">
+        <h4><i class="fas fa-chart-line"></i> Predict Runs</h4>
+        <label>Player Name</label>
+        <select id="predictPlayerSelect"><option value="">— Select —</option></select>
+        <label>Matches (override)</label>
+        <input type="number" id="predictMatches" placeholder="Leave empty to use actual" min="0" />
+        <button id="btnPredictRuns"><i class="fas fa-calculator"></i> Predict Runs</button>
+        <div class="ml-result" id="predictResult">Prediction will appear here.</div>
+      </div>
+      <div class="ml-card">
+        <h4><i class="fas fa-tag"></i> Classify Role</h4>
+        <label>Player Name</label>
+        <select id="classifyPlayerSelect"><option value="">— Select —</option></select>
+        <label>Runs (override)</label>
+        <input type="number" id="classifyRuns" placeholder="Leave empty to use actual" min="0" />
+        <label>Wickets (override)</label>
+        <input type="number" id="classifyWickets" placeholder="Leave empty to use actual" min="0" />
+        <button id="btnClassifyRole"><i class="fas fa-microchip"></i> Classify Role</button>
+        <div class="ml-result" id="classifyResult">Classification will appear here.</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="footer"><i class="fas fa-cricket"></i> Built with FastAPI + Scikit-learn &bull; Data from <strong>Sports.csv</strong></div>
+</div>
+
+<script>
+  const API_BASE = 'http://localhost:8000/api';   // अगर port 8001 पर चला रहे हैं तो 8001 करें
+  let players = [];
+  let chartRunsInstance = null, chartWicketsInstance = null;
+  const $ = id => document.getElementById(id);
+
+  async function fetchPlayers() {
+    try {
+      const resp = await fetch(`${API_BASE}/players`);
+      if (!resp.ok) throw new Error('Backend not reachable');
+      players = await resp.json();
+      renderAll();
+    } catch (err) {
+      document.getElementById('playerGrid').innerHTML =
+        `<p style="color:#f87171;">⚠️ Could not load data. Make sure the backend is running on port 8000.</p>`;
+      console.error(err);
+    }
+  }
+
+  function renderAll() {
+    renderStats();
+    renderPlayerGrid();
+    renderSelects();
+    renderCharts();
+    $('playerCount').textContent = players.length;
+  }
+
+  function renderStats() {
+    const total = players.length;
+    const runs = players.reduce((s, p) => s + p.Runs, 0);
+    const wickets = players.reduce((s, p) => s + p.Wickets, 0);
+    const avg = total ? Math.round(runs / total) : 0;
+    $('statPlayers').textContent = total;
+    $('statRuns').textContent = runs;
+    $('statWickets').textContent = wickets;
+    $('statAvgRuns').textContent = avg;
+  }
+
+  function renderPlayerGrid() {
+    let html = '';
+    players.forEach((p, idx) => {
+      const cluster = p.cluster !== undefined ? p.cluster : (idx % 3);
+      // Image URL बनाएँ – API_BASE से base URL निकालें
+      const baseUrl = API_BASE.replace('/api', '');
+      const imgSrc = p.Image ? `${baseUrl}/${p.Image}` : '';
+      html += `
+        <div class="player-card">
+          <span class="cluster-badge cluster-${cluster}"><i class="fas fa-circle"></i> Cluster ${cluster}</span>
+          <div class="avatar">
+            <img src="${imgSrc}" alt="${p.Name}" 
+                 onerror="this.classList.add('error'); this.nextElementSibling.style.display='flex';" />
+            <div class="fallback" style="display: none;">${p.Name.charAt(0)}</div>
+          </div>
+          <div class="name">${p.Name}</div>
+          <span class="role">${p.Role}</span>
+          <div class="stats-row">
+            <div><div class="num">${p.Matches}</div><div class="lbl">Matches</div></div>
+            <div><div class="num">${p.Runs}</div><div class="lbl">Runs</div></div>
+            <div><div class="num">${p.Wickets}</div><div class="lbl">Wickets</div></div>
+          </div>
+        </div>
+      `;
+    });
+    $('playerGrid').innerHTML = html;
+  }
+
+  function renderSelects() {
+    const opts = players.map(p => `<option value="${p.PlayerID}">${p.Name} (${p.Role})</option>`).join('');
+    $('predictPlayerSelect').innerHTML = `<option value="">— Select —</option>${opts}`;
+    $('classifyPlayerSelect').innerHTML = `<option value="">— Select —</option>${opts}`;
+  }
+
+  function renderCharts() {
+    if (!players.length) return;
+    const labels = players.map(p => p.Name);
+    const runsData = players.map(p => p.Runs);
+    const matchesData = players.map(p => p.Matches);
+    const wicketsData = players.map(p => p.Wickets);
+
+    const ctx1 = document.getElementById('chartRuns').getContext('2d');
+    if (chartRunsInstance) chartRunsInstance.destroy();
+    chartRunsInstance = new Chart(ctx1, {
+      type: 'bar',
+      data: {
+        labels: labels,
+        datasets: [
+          { label: 'Runs', data: runsData, backgroundColor: 'rgba(96,165,250,0.7)', borderColor: '#60a5fa', borderWidth:1, borderRadius:4 },
+          { label: 'Matches', data: matchesData, backgroundColor: 'rgba(250,204,21,0.5)', borderColor: '#facc15', borderWidth:1, borderRadius:4 }
+        ]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { labels: { color: '#94a3b8', font: { size:12 } } } },
+        scales: {
+          x: { ticks: { color: '#94a3b8', font: { size:10 } }, grid: { color:'#1a2332' } },
+          y: { ticks: { color: '#94a3b8' }, grid: { color:'#1a2332' } }
+        }
+      }
+    });
+
+    const ctx2 = document.getElementById('chartWickets').getContext('2d');
+    if (chartWicketsInstance) chartWicketsInstance.destroy();
+    chartWicketsInstance = new Chart(ctx2, {
+      type: 'doughnut',
+      data: {
+        labels: labels,
+        datasets: [{
+          data: wicketsData,
+          backgroundColor: ['#3b82f6','#8b5cf6','#ec4899','#f59e0b','#14b8a6','#f472b6','#6366f1','#22d3ee','#f97316','#a3e635'],
+          borderColor: '#141e2d',
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        plugins: { legend: { position: 'right', labels: { color: '#94a3b8', font: { size:11 }, boxWidth:12 } } }
+      }
+    });
+  }
+
+  // ---- Predict Runs ----
+  $('btnPredictRuns').addEventListener('click', async function() {
+    const id = $('predictPlayerSelect').value;
+    if (!id) { $('predictResult').innerHTML = '⚠️ Please select a player.'; return; }
+    const player = players.find(p => p.PlayerID === id);
+    const matchesOverride = parseInt($('predictMatches').value);
+    const matches = isNaN(matchesOverride) || matchesOverride < 0 ? player.Matches : matchesOverride;
+
+    $('predictResult').innerHTML = '<span class="loader"></span> Predicting...';
+    try {
+      const resp = await fetch(`${API_BASE}/predict/runs`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ player_id: id, matches })
+      });
+      const data = await resp.json();
+      if (data.error) {
+        $('predictResult').innerHTML = `⚠️ ${data.error}`;
+      } else {
+        $('predictResult').innerHTML = `
+          <i class="fas fa-bullseye" style="color:#facc15;"></i>
+          <strong>${data.player}</strong> &bull;
+          <span class="highlight">${data.predicted_runs}</span> predicted runs
+          (based on ${data.used_matches} matches)
+          ${data.actual_runs !== undefined ? `&bull; Actual: ${data.actual_runs}` : ''}
+          <br><span class="text-muted" style="font-size:13px;">Model: Linear Regression</span>
+        `;
+      }
+    } catch (err) {
+      $('predictResult').innerHTML = `⚠️ Error: ${err.message}`;
+    }
+  });
+
+  // ---- Classify Role ----
+  $('btnClassifyRole').addEventListener('click', async function() {
+    const id = $('classifyPlayerSelect').value;
+    if (!id) { $('classifyResult').innerHTML = '⚠️ Please select a player.'; return; }
+    const player = players.find(p => p.PlayerID === id);
+    const runsOverride = parseInt($('classifyRuns').value);
+    const wicketsOverride = parseInt($('classifyWickets').value);
+    const runs = isNaN(runsOverride) || runsOverride < 0 ? player.Runs : runsOverride;
+    const wickets = isNaN(wicketsOverride) || wicketsOverride < 0 ? player.Wickets : wicketsOverride;
+
+    $('classifyResult').innerHTML = '<span class="loader"></span> Classifying...';
+    try {
+      const resp = await fetch(`${API_BASE}/predict/role`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ player_id: id, runs, wickets })
+      });
+      const data = await resp.json();
+      if (data.error) {
+        $('classifyResult').innerHTML = `⚠️ ${data.error}`;
+      } else {
+        $('classifyResult').innerHTML = `
+          <i class="fas fa-tag" style="color:#facc15;"></i>
+          <strong>${data.player}</strong> &bull;
+          <span class="highlight">${data.predicted_role}</span> (predicted)
+          ${data.actual_role ? `&bull; Actual: ${data.actual_role}` : ''}
+          <br><span class="text-muted" style="font-size:13px;">Used: ${data.used_runs} runs, ${data.used_wickets} wickets</span>
+        `;
+      }
+    } catch (err) {
+      $('classifyResult').innerHTML = `⚠️ Error: ${err.message}`;
+    }
+  });
+
+  fetchPlayers();
+</script>
+</body>
+</html>

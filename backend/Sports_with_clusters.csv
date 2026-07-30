@@ -1,0 +1,11 @@
+PlayerID,Name,Team,Role,Matches,Runs,Wickets,Image,RoleEnc,cluster
+IND001,Shubman Gill,India,Batsman,35,2150,0,images/a.jpg,1,1
+IND002,Yashasvi Jaiswal,India,Batsman,22,1250,0,images/b.jpg,1,2
+IND003,Rishabh Pant,India,Wicket-Keeper,30,1800,0,images/c.jpg,3,2
+IND004,Hardik Pandya,India,All-Rounder,40,1500,50,images/d.jpg,0,2
+IND005,Ravindra Jadeja,India,All-Rounder,60,2500,200,images/e.jpg,0,1
+IND006,Jasprit Bumrah,India,Bowler,50,500,250,images/f.jpg,2,0
+IND007,Kuldeep Yadav,India,Bowler,45,300,180,images/g.jpg,2,0
+IND008,KL Rahul,India,Wicket-Keeper,55,3200,0,images/h.jpg,3,1
+IND009,Axar Patel,India,All-Rounder,38,900,100,images/i.jpg,0,0
+IND010,Sanju Samson,India,Wicket-Keeper,25,1100,0,images/j.jpg,3,2
